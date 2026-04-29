@@ -1,5 +1,6 @@
 package entity;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
@@ -7,7 +8,10 @@ import java.math.BigDecimal;
  * (We will save it into our order like an additional description)
  */
 
-public class OrderItemEntity{
+public class OrderItemEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private Long bookId;
     private Integer numberOfBooks;
     private BigDecimal priceAtTheTimeOfPurchase;

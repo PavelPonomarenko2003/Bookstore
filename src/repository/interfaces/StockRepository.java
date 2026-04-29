@@ -1,6 +1,8 @@
 package repository.interfaces;
 
-public interface StockRepository {
+import entity.StockEntity;
+
+public interface StockRepository extends CrudRepository<StockEntity, Long>{
 
     void updateBooksQuantity(Long bookId, Integer quantity);
 

@@ -11,6 +11,14 @@ import java.util.List;
 public class OrderRepositoryImpl extends CrudRepositoryImpl<OrderEntity>
         implements OrderRepository {
 
+    public OrderRepositoryImpl(List<OrderEntity> listOfOrders) {
+        super(listOfOrders); // Передаем список в CrudRepositoryImpl для заполнения Map
+    }
+
+    public OrderRepositoryImpl() {
+        super();
+    }
+
     @Override
     public List<OrderEntity> findAllByUserId(Long userId) {
         return storageDB.values().stream()

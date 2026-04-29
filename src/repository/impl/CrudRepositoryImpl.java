@@ -17,25 +17,41 @@ import java.util.ArrayList;
 public class CrudRepositoryImpl<T extends BaseEntity>
         implements CrudRepository<T, Long> {
 
-    protected final Map<Long, T> storageDB = new HashMap<>();
+    protected final Map<Long, T> storageDB;
     private Long idCounter = 1L;
+
+    public CrudRepositoryImpl(List<T> initialData) {
+        this.storageDB = new HashMap<>();
+        if (initialData != null) {
+            for (T entity : initialData) {
+                this.storageDB.put(entity.getId(), entity);
+                if (entity.getId() >= idCounter) {
+                    idCounter = entity.getId() + 1;
+                }
+            }
+        }
+    }
+
+    public CrudRepositoryImpl() {
+        this.storageDB = new HashMap<>();
+    }
 
     @Override
     public void save(T entity) {
         if (entity.getId() == null) {
             entity.setId(idCounter++);
         }
-        storageDB.put(entity.getId(), entity); // map's method will add or update our data
+        storageDB.put(entity.getId(), entity);
     }
 
     @Override
     public Optional<T> findById(Long id) {
-        return Optional.ofNullable(storageDB.get(id)); // to prevent NullPointerException
+        return Optional.ofNullable(storageDB.get(id));
     }
 
     @Override
     public List<T> findAll() {
-        return new ArrayList<>(storageDB.values()); // fake list for safety
+        return new ArrayList<>(storageDB.values());
     }
 
     @Override
@@ -43,3 +59,4 @@ public class CrudRepositoryImpl<T extends BaseEntity>
         storageDB.remove(id);
     }
 }
+

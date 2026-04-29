@@ -1,105 +1,67 @@
-import entity.BookEntity;
-import entity.OrderEntity;
-import repository.impl.*;
-import repository.interfaces.*;
-import service.impl.*;
-import service.interfaces.*;
+import config.ApplicationConfig;
+import dto.BookstoreStorageForSerializingDTO;
+import exception.serialization_exceptions.FileNotFoundExceptionCustom;
+import repository.impl.BookRepositoryImpl;
+import repository.impl.StockRepositoryImpl;
+import repository.impl.OrderRepositoryImpl;
 
-import java.util.List;
-import java.util.Scanner;
+import repository.interfaces.BookRepository;
+import repository.interfaces.StockRepository;
+import repository.interfaces.OrderRepository;
+
+import serialization.SerializationUtility;
+import service.interfaces.StockService;
+import service.interfaces.OrderService;
+import service.interfaces.BookService;
+
+import service.impl.OrderServiceImpl;
+import service.impl.StockServiceImpl;
+import service.impl.BookServiceImpl;
+
+import ui.ConsoleUI;
 
 public class Main {
     public static void main(String[] args) {
 
-        // We'll fix it up when we'll use spring, now we need to create it by ourselves
-        BookRepository bookRepo = new BookRepositoryImpl();
-        StockRepository stockRepo = new StockRepositoryImpl();
-        OrderRepository orderRepo = new OrderRepositoryImpl();
+        ApplicationConfig config = new ApplicationConfig("application.properties");
+        String savePath = config.getSavePath();
+
+        BookstoreStorageForSerializingDTO loadedState = null;
+        try {
+            loadedState = (BookstoreStorageForSerializingDTO) SerializationUtility.load(savePath);
+            System.out.println("Data got successfully:  " + savePath);
+        } catch (FileNotFoundExceptionCustom e) {
+            System.out.println("Will be created a new file.");
+        } catch (Exception e) {
+            System.err.println("Troubles with data loading: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        // checking do we have any data
+        BookRepository bookRepo = (loadedState != null)
+                ? new BookRepositoryImpl(loadedState.getListOfBooks())
+                : new BookRepositoryImpl();
+
+        StockRepository stockRepo = (loadedState != null)
+                ? new StockRepositoryImpl(loadedState.getListOfStock())
+                : new StockRepositoryImpl();
+
+        OrderRepository orderRepo = (loadedState != null)
+                ? new OrderRepositoryImpl(loadedState.getListOfOrders())
+                : new OrderRepositoryImpl();
 
         StockService stockService = new StockServiceImpl(stockRepo);
         BookService bookService = new BookServiceImpl(bookRepo, stockService);
-        OrderService orderService = new OrderServiceImpl(orderRepo, bookService, stockService);
+        OrderService orderService = new OrderServiceImpl(orderRepo, bookService, stockService, config);
 
-        bookService.addBookIntoCatalogAndUpdateStock("Java_Book", 100.0, 10);
-        bookService.addBookIntoCatalogAndUpdateStock("AI_Book", 150.0, 5);
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Order Management !!!!!!!!!!!!!!!");
-
-        while (true) {
-            System.out.println("\n MENU: ");
-            System.out.println("1. Catalog / Stock");
-            System.out.println("2. Create Order (Buy)");
-            System.out.println("3. Cancel Order (Return items)");
-            System.out.println("4. Finish Order");
-            System.out.println("5. Show All My Orders");
-            System.out.println("6. Show Sorted Orders (Pagination)");
-            System.out.println("0. Exit");
-            System.out.print("Action: ");
-
-            int choice = scanner.nextInt();
-            scanner.nextLine();
-
-            try {
-                if (choice == 1) {
-                    for (BookEntity b : bookService.findAllBooksInCatalog()) {
-                        System.out.println("[" + b.getTitle() + "] Price: " + b.getPrice()
-                                + " Stock: " + stockService.getBookQuantity(b.getId()));
-                    }
-                }
-                else if (choice == 2) {
-                    System.out.print("Book title: ");
-                    String title = scanner.nextLine();
-                    System.out.print("Quantity: ");
-                    int qty = scanner.nextInt();
-                    orderService.createOrder(1L, title, qty);
-                }
-                else if (choice == 3) {
-                    System.out.print("Enter Order ID to CANCEL: ");
-                    Long id = scanner.nextLong();
-                    orderService.cancelOrder(id);
-                }
-                else if (choice == 4) {
-                    System.out.print("Enter Order ID to FINISH: ");
-                    Long id = scanner.nextLong();
-                    orderService.completeOrder(id);
-                }
-                else if (choice == 5) {
-                    for (OrderEntity o : orderService.getOrdersByUserId(1L)) {
-                        System.out.println("Order " + o.getId() + " Status: " + o.getOrderStatus() + " Total: " + o.getTotalPrice());
-                    }
-                }
-                else if (choice == 6) {
-                    System.out.println("\n--- Sorting Options: id, price, status: (opened, finished) ");
-                    System.out.print("Sort by: ");
-                    String sortBy = scanner.nextLine();
-
-                    System.out.print("Enter page number: ");
-                    int page = scanner.nextInt();
-
-                    int pageSize = 1; // Size of out pages!!!
-
-                    List<OrderEntity> sortedOrders = orderService.getSortedOrders(sortBy, page, pageSize);
-
-                    if (sortedOrders.isEmpty()) {
-                        System.out.println("No orders found on this page.");
-                    } else {
-                        System.out.println("\n--- Orders Page " + page + " (Sorted by " + sortBy + ") ---");
-                        for (OrderEntity o : sortedOrders) {
-                            System.out.println(
-                                    "ID: " + o.getId() +
-                                            " Status: " + o.getOrderStatus() +
-                                            " Total: " + o.getTotalPrice() +
-                                            " Created: " + o.getCreatedTimestamp()
-                            );
-                        }
-                    }
-                }
-                else if (choice == 0) break;
-
-            } catch (RuntimeException e) {
-                System.out.println("System exception : " + e.getMessage());
-            }
+        // data for testing
+        if (loadedState == null) {
+            System.out.println("Testing data: ");
+            bookService.addBookIntoCatalogAndUpdateStock("Java_Book", 100.0, 10);
+            bookService.addBookIntoCatalogAndUpdateStock("AI_Book", 150.0, 5);
         }
+
+        ConsoleUI ui = new ConsoleUI(bookService, orderService, stockService, savePath);
+        ui.start();
     }
 }

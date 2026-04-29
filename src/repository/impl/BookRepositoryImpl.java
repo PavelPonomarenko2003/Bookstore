@@ -3,6 +3,7 @@ package repository.impl;
 import entity.BookEntity;
 import repository.interfaces.BookRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -13,6 +14,15 @@ import java.util.Optional;
   */
 public class BookRepositoryImpl extends CrudRepositoryImpl<BookEntity>
         implements BookRepository {
+
+    // Constructor when we get data from the file during serialization
+    public BookRepositoryImpl(List<BookEntity> listOfBooks) {
+        super(listOfBooks);
+    }
+
+    public BookRepositoryImpl() {
+        super();
+    }
 
     @Override
     public Optional<BookEntity> findByTitle(String title) {

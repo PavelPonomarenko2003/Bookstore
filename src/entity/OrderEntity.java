@@ -10,6 +10,9 @@ import java.util.List;
  */
 
 public class OrderEntity extends BaseEntity{
+
+    private static final long serialVersionUID = 1L;
+
     private Long userId;
     private BigDecimal totalPrice;
     private LocalDateTime createdTimestamp;

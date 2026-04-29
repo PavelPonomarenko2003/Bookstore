@@ -1,7 +1,10 @@
 package service.impl;
 
+import entity.StockEntity;
 import repository.interfaces.StockRepository;
 import service.interfaces.StockService;
+
+import java.util.List;
 
 public class StockServiceImpl implements StockService {
 
@@ -33,4 +36,11 @@ public class StockServiceImpl implements StockService {
         stockRepository.deleteBook(bookId);
         System.out.println("Stock data cleared for book ID: " + bookId);
     }
+
+    @Override
+    public List<StockEntity> findAllBooks() {
+        return stockRepository.findAll();
+    }
+
+
 }

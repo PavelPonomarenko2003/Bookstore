@@ -7,6 +7,9 @@ import java.math.BigDecimal;
  */
 
 public class BookEntity extends BaseEntity{
+
+    private static final long serialVersionUID = 1L;
+
     private String title;
     private BigDecimal price;
 

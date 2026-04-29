@@ -1,5 +1,6 @@
 package service.impl;
 
+import config.ApplicationConfig;
 import entity.BookEntity;
 import entity.OrderEntity;
 import entity.OrderItemEntity;
@@ -25,24 +26,32 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final BookService bookService;
     private final StockService stockService;
+    private final ApplicationConfig config;
 
     public OrderServiceImpl(OrderRepository orderRepository,
                             BookService bookService,
-                            StockService stockService) {
+                            StockService stockService,
+                            ApplicationConfig config) {
         this.orderRepository = orderRepository;
         this.bookService = bookService;
         this.stockService = stockService;
+        this.config = config;
     }
 
     @Override
     public void createOrder(Long userId, String bookTitle, Integer quantity) {
-        BookEntity book = validateAndGetBookByTitle(bookTitle, quantity);
+        // flagpole on open/close bookstore
+        if(config.isAllowChangeAvailability()) {
+            BookEntity book = validateAndGetBookByTitle(bookTitle, quantity);
 
-        OrderItemEntity item = createOrderItem(book, quantity);
-        OrderEntity order = buildOrder(userId, item);
+            OrderItemEntity item = createOrderItem(book, quantity);
+            OrderEntity order = buildOrder(userId, item);
 
-        saveOrderAndUpdateStock(order, book.getId(), quantity);
-        System.out.println("Success: Order created. Total: " + order.getTotalPrice());
+            saveOrderAndUpdateStock(order, book.getId(), quantity);
+            System.out.println("Success: Order created. Total: " + order.getTotalPrice());
+        } else {
+            System.out.println("Sorry bookstore is closed!");
+        }
     }
 
     @Override

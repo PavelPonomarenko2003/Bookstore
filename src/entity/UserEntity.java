@@ -6,6 +6,8 @@ package entity;
  */
 
 public class UserEntity extends BaseEntity{
+    private static final long serialVersionUID = 1L;
+
     private String username;
     private Role role;
 

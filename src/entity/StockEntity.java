@@ -5,9 +5,12 @@ package entity;
  */
 
 public class StockEntity extends BaseEntity{
+
+    private static final long serialVersionUID = 1L;
+
     private Integer numberOfBooksInStock;
 
-    public StockEntity(Integer numberOfBooksInStock) {
+    public StockEntity(Long bookId, Integer numberOfBooksInStock) {
         super();
         this.numberOfBooksInStock = numberOfBooksInStock;
     }
