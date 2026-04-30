@@ -26,7 +26,7 @@ public class BookServiceImpl implements BookService {
 
         if (existingBook.isPresent()) {
             Long bookId = existingBook.get().getId();
-            // Вызов через сервис
+
             stockService.updateQuantity(bookId, initialQuantity);
             System.out.println(
                     "The book: " + title +
@@ -37,7 +37,7 @@ public class BookServiceImpl implements BookService {
             newBook.setPrice(BigDecimal.valueOf(price));
 
             bookRepository.save(newBook);
-            // Вызов через сервис
+
             stockService.updateQuantity(newBook.getId(), initialQuantity);
             System.out.println("The book '" + title + "' has been added to catalog and stock!");
         }
@@ -52,7 +52,7 @@ public class BookServiceImpl implements BookService {
         }
 
         bookRepository.delete(id);
-        // Вызов через сервис
+
         stockService.removeStockData(id);
 
         System.out.println(
