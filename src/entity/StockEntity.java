@@ -1,11 +1,14 @@
 package entity;
 
+import java.io.Serial;
+
 /**
  * Entity that will show us what product we have in the stock
  */
 
 public class StockEntity extends BaseEntity{
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private Integer numberOfBooksInStock;
