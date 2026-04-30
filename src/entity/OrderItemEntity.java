@@ -2,6 +2,7 @@ package entity;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.io.Serial;
 
 /**
  * Entity that will provide short description about our purchase
@@ -10,6 +11,7 @@ import java.math.BigDecimal;
 
 public class OrderItemEntity implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private Long bookId;
