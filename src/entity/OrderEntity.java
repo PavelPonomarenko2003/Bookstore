@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.Serial;
 
 /**
  * Entity that provide check about every purchase
@@ -11,6 +12,7 @@ import java.util.List;
 
 public class OrderEntity extends BaseEntity{
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private Long userId;
