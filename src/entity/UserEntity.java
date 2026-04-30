@@ -1,11 +1,15 @@
 package entity;
 
+import java.io.Serial;
+
 /**
  * Entity about our users
  * (for future logic)
  */
 
 public class UserEntity extends BaseEntity{
+
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private String username;
