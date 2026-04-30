@@ -1,6 +1,7 @@
 package entity;
 
 import java.math.BigDecimal;
+import java.io.Serial;
 
 /**
  * Entity that provide descriptions about every book
@@ -8,6 +9,7 @@ import java.math.BigDecimal;
 
 public class BookEntity extends BaseEntity{
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private String title;
