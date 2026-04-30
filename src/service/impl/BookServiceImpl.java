@@ -4,7 +4,7 @@ import entity.BookEntity;
 import exception.BookNotFoundException;
 import repository.interfaces.BookRepository;
 import service.interfaces.BookService;
-import service.interfaces.StockService; // Импортируем интерфейс сервиса
+import service.interfaces.StockService; 
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.Optional;
 public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
-    private final StockService stockService; // Заменяем репозиторий на сервис
+    private final StockService stockService; 
 
     public BookServiceImpl(BookRepository bookRepository, StockService stockService) {
         this.bookRepository = bookRepository;
