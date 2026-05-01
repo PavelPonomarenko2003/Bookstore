@@ -2,7 +2,7 @@ package serialization.config;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Properties; // Важно: импорт для работы с Properties
+import java.util.Properties;
 
 public class ApplicationConfig {
 
