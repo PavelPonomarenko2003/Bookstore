@@ -38,26 +38,6 @@ public class BookServiceImplTest {
     @InjectMocks
     private BookServiceImpl bookService;
 
-    @BeforeAll
-    public static void notificationAboutTestStarting(TestInfo info) {
-        System.out.println(info.getDisplayName() + " Get started!");
-    }
-
-    @AfterAll
-    public static void notificationAboutTestFinishing(TestInfo info) {
-        System.out.println(info.getDisplayName() + " Get finished!");
-    }
-
-    @BeforeEach
-    public void notificationAboutMethodStarted(TestInfo info) {
-        System.out.println(info.getDisplayName() + " Get started!");
-    }
-
-    @AfterEach
-    public void notificationAboutMethodFinished(TestInfo info) {
-        System.out.println(info.getDisplayName() + " Get finished!");
-    }
-
     @Test
     @DisplayName("Adding book into catalog, if that is new book.")
     void mustSaveBookToCatalogWhenBookIsNew(){
