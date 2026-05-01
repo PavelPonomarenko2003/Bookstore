@@ -42,26 +42,6 @@ class OrderServiceImplTest {
     @InjectMocks
     private OrderServiceImpl orderService;
 
-    @BeforeAll
-    public static void notificationAboutTestStarting(TestInfo info) {
-        System.out.println(info.getDisplayName() + " Get started!");
-    }
-
-    @AfterAll
-    public static void notificationAboutTestFinishing(TestInfo info) {
-        System.out.println(info.getDisplayName() + " Get finished!");
-    }
-
-    @BeforeEach
-    public void notificationAboutMethodStarted(TestInfo info) {
-        System.out.println(info.getDisplayName() + " Get started!");
-    }
-
-    @AfterEach
-    public void notificationAboutMethodFinished(TestInfo info) {
-        System.out.println(info.getDisplayName() + " Get finished!");
-    }
-
     @Test
     @DisplayName("Have to create order when bookstore is open.")
     void createOrderWhenBookstoreIsOpen() {
