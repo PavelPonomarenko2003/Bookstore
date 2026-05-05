@@ -4,6 +4,11 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 .kotlin
+.idea/
+*.iml
+
+# Data saving file
+saving.bin
 
 ### Eclipse ###
 .apt_generated
