@@ -8,7 +8,7 @@ public class StockRepositoryImpl
         extends CrudRepositoryImpl<StockEntity> implements StockRepository {
 
     public StockRepositoryImpl(List<StockEntity> listOfStock) {
-        super(listOfStock); // Данные уходят в родительскую карту storageDB
+        super(listOfStock);
     }
 
     public StockRepositoryImpl() {
@@ -19,7 +19,6 @@ public class StockRepositoryImpl
     public void updateBooksQuantity(Long bookId, Integer quantity) {
         StockEntity existingStock = null;
 
-        // Ищем вручную через цикл
         for (StockEntity s : storageDB.values()) {
             if (s.getId().equals(bookId)) {
                 existingStock = s;
@@ -28,7 +27,7 @@ public class StockRepositoryImpl
         }
 
         if (existingStock != null) {
-            existingStock.setNumberOfBooksInStock(existingStock.getNumberOfBooksInStock() + quantity);
+            existingStock.setNumberOfBooksInStock(quantity);
         } else {
             save(new StockEntity(bookId, quantity));
         }

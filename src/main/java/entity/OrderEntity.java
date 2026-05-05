@@ -1,5 +1,7 @@
 package entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.io.Serial;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,6 +19,7 @@ public class OrderEntity extends BaseEntity{
 
     private Long userId;
     private BigDecimal totalPrice;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdTimestamp;
     private LocalDateTime finishedTimestamp;
     private OrderStatus orderStatus;
@@ -37,7 +40,7 @@ public class OrderEntity extends BaseEntity{
         this.createdTimestamp = createdTimestamp;
         this.finishedTimestamp = finishedTimestamp;
         this.orderStatus = orderStatus;
-        this.payment = payment;
+        this.payment = Payment.CARD;
         this.listBooksInOrder = listBooksInOrder;
     }
 
