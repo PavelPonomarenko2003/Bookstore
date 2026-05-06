@@ -9,6 +9,12 @@ import java.io.IOException;
 
 /**
  * Class for converting to Json and getting status
+ * to follow DRY better make such helper classes
+ * //////////////////////////////////////////////
+ * WebSocket - all classes marked this annotations handling all requests with certain url
+ * methods that HttpsServlet has: init, destroy, doGet, doPost, doPut (don't have doPatch)
+ * Http request - everything that client has sent
+ * Https response - body for making answer to client
  */
 public class ResponseHandlerForHttp {
 
