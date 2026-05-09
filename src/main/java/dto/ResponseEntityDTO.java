@@ -1,5 +1,8 @@
 package dto;
 
+/**
+ * Custom DTO for body and status (Same logic with original ResponseEntity)
+ */
 public class ResponseEntityDTO<T> {
 
     private final T body;

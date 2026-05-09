@@ -1,8 +1,11 @@
 package repository.impl;
 
+import database.my_sql.DataSourceHikariConfiguration;
 import entity.BookEntity;
 import repository.interfaces.BookRepository;
+import repository.mapper.impl.BookDbToObjectMapper;
 
+import java.sql.*;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,22 +15,44 @@ import java.util.Optional;
  * Right now we have just basic functionality, but in future we can realize new methods
  * Other logic about method's acting and validation we'll make in service
   */
-public class BookRepositoryImpl extends CrudRepositoryImpl<BookEntity>
+public class BookRepositoryImpl extends JdbcBaseRepository<BookEntity, Long>
         implements BookRepository {
 
-    // Constructor when we get data from the file during serialization
-    public BookRepositoryImpl(List<BookEntity> listOfBooks) {
-        super(listOfBooks);
+    private final BookDbToObjectMapper bookMapper = new BookDbToObjectMapper();
+
+    @Override
+    public void save(BookEntity entity) {
+        String sql = "INSERT INTO books (title, price) VALUES (?, ?) " +
+                "ON DUPLICATE KEY UPDATE title = VALUES(title), price = VALUES(price)";
+
+        Long generatedId = executeInsert(sql, entity.getTitle(), entity.getPrice());
+
+        if (entity.getId() == null) {
+            entity.setId(generatedId);
+        }
     }
 
-    public BookRepositoryImpl() {
-        super();
+    @Override
+    public Optional<BookEntity> findById(Long id) {
+        String sql = "SELECT * FROM books WHERE id = ?";
+        return executeQuery(sql, bookMapper, id).stream().findFirst();
+    }
+
+    @Override
+    public List<BookEntity> findAll() {
+        String sql = "SELECT * FROM books";
+        return executeQuery(sql, bookMapper);
+    }
+
+    @Override
+    public void delete(Long id) {
+        String sql = "DELETE FROM books WHERE id = ?";
+        executeUpdate(sql, id);
     }
 
     @Override
     public Optional<BookEntity> findByTitle(String title) {
-        return storageDB.values().stream()
-                .filter(book -> book.getTitle().equalsIgnoreCase(title))
-                .findFirst();
+        String sql = "SELECT * FROM books WHERE LOWER(title) = LOWER(?)";
+        return executeQuery(sql, bookMapper, title).stream().findFirst();
     }
 }

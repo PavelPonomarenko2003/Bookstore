@@ -1,6 +1,7 @@
 package entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serial;
 import java.math.BigDecimal;
@@ -11,7 +12,7 @@ import java.util.List;
 /**
  * Entity that provide check about every purchase
  */
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrderEntity extends BaseEntity{
 
     @Serial
@@ -23,7 +24,7 @@ public class OrderEntity extends BaseEntity{
     private LocalDateTime createdTimestamp;
     private LocalDateTime finishedTimestamp;
     private OrderStatus orderStatus;
-    private Payment payment;
+    private Payment payment = Payment.CARD;
     private List<OrderItemEntity> listBooksInOrder = new ArrayList<>();
 
     public OrderEntity(
@@ -40,7 +41,7 @@ public class OrderEntity extends BaseEntity{
         this.createdTimestamp = createdTimestamp;
         this.finishedTimestamp = finishedTimestamp;
         this.orderStatus = orderStatus;
-        this.payment = Payment.CARD;
+        this.payment = payment;
         this.listBooksInOrder = listBooksInOrder;
     }
 

@@ -2,6 +2,7 @@ package service.impl;
 
 import entity.BookEntity;
 import exception.BookNotFoundException;
+import exception.IncorrectInputException;
 import repository.interfaces.BookRepository;
 import service.interfaces.BookService;
 import service.interfaces.StockService;
@@ -22,15 +23,23 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public void addBookIntoCatalogAndUpdateStock(String title, double price, int initialQuantity) {
+
+        if (title == null || title.isBlank()) {
+            throw new IncorrectInputException();
+        }
+        if (price < 0) {
+            throw new IncorrectInputException();
+        }
+        if (initialQuantity < 0) {
+            throw new IncorrectInputException();
+        }
+
         Optional<BookEntity> existingBook = bookRepository.findByTitle(title);
 
         if (existingBook.isPresent()) {
             Long bookId = existingBook.get().getId();
-
             stockService.updateQuantity(bookId, initialQuantity);
-            System.out.println(
-                    "The book: " + title +
-                            " already exists. Quantity increased by: " + initialQuantity);
+            System.out.println("The book: " + title + " already exists. Quantity updated.");
         } else {
             BookEntity newBook = new BookEntity();
             newBook.setTitle(title);
@@ -45,17 +54,14 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public void deleteBookFromCatalogAndStock(Long id) {
-        Optional<BookEntity> bookOptional = bookRepository.findById(id);
 
-        if (bookOptional.isEmpty()) {
-            throw new BookNotFoundException();
-        }
+        bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException());
 
         bookRepository.delete(id);
-
         stockService.removeStockData(id);
-        System.out.println(
-                "Success: Book with ID " + id + " has been removed from catalog and stock.");
+
+        System.out.println("Success: Book with ID " + id + " removed.");
     }
 
     @Override
@@ -63,3 +69,4 @@ public class BookServiceImpl implements BookService {
         return bookRepository.findAll();
     }
 }
+

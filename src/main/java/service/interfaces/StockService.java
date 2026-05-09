@@ -2,6 +2,7 @@ package service.interfaces;
 
 import entity.StockEntity;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public interface StockService {

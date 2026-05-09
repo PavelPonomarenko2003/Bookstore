@@ -6,42 +6,50 @@ import java.util.Properties;
 
 public class ApplicationConfig {
 
-    // Keys from app properties
+    // keys from application.propeties for db connection
+    private static final String KEY_DB_URL = "db.url";
+    private static final String KEY_DB_USER = "db.username";
+    private static final String KEY_DB_PASS = "db.password";
     private static final String KEY_AVAILABILITY = "bookstore.allow.changing.availability";
-    private static final String KEY_PATH = "bookstore.file.saving.path";
 
-    // fields to save our data
+    private String dbUrl;
+    private String dbUser;
+    private String dbPassword;
     private boolean allowChangeAvailability;
-    private String savePath;
 
     public ApplicationConfig(String fileName) {
         Properties properties = new Properties();
 
-        // on case if smth wrong with our file using try with res
-        // also FileInputStream implements Autocloseable
-        // using auto-closable to prevent our os taking over it
         try (FileInputStream fis = new FileInputStream(fileName)) {
             properties.load(fis);
 
-            // preventing system falling (use default = true)
+            this.dbUrl = properties.getProperty(KEY_DB_URL, "jdbc:mysql://localhost:3306/bookstore_db");
+            this.dbUser = properties.getProperty(KEY_DB_USER, "root");
+            this.dbPassword = properties.getProperty(KEY_DB_PASS, "");
+
             this.allowChangeAvailability = Boolean.parseBoolean(
                     properties.getProperty(KEY_AVAILABILITY, "true")
             );
 
-            this.savePath = properties.getProperty(KEY_PATH, "default.bin");
-
         } catch (IOException e) {
-            System.err.println("Config file hasn't found!");
-            this.allowChangeAvailability = true;
-            this.savePath = "default.bin";
+            System.err.println("Config file not found!");
         }
+    }
+
+    // getters for Hikari
+    public String getDbUrl() {
+        return dbUrl;
+    }
+
+    public String getDbUser() {
+        return dbUser;
+    }
+
+    public String getDbPassword() {
+        return dbPassword;
     }
 
     public boolean isAllowChangeAvailability() {
         return allowChangeAvailability;
-    }
-
-    public String getSavePath() {
-        return savePath;
     }
 }

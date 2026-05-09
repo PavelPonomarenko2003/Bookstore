@@ -16,31 +16,40 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public void updateQuantity(Long bookId, Integer amount) {
+
+        if (bookId == null) {
+            throw new IllegalArgumentException("Book ID cannot be null for stock update");
+        }
+
         stockRepository.updateBooksQuantity(bookId, amount);
-        System.out.println("Stock updated for book with ID: " + bookId +
-                ". Amount changed by: " + amount);
+        System.out.println("Stock updated for book ID: " + bookId + ". Change: " + amount);
     }
 
     @Override
     public Integer getBookQuantity(Long bookId) {
+        if (bookId == null) return 0;
         return stockRepository.getQuantity(bookId);
     }
 
     @Override
     public boolean doWeHaveThatBooksInStock(Long bookId, Integer requestedAmount) {
+
+        if (requestedAmount == null || requestedAmount < 0) {
+            return false;
+        }
         return stockRepository.doWeHaveThatBooksInStock(bookId, requestedAmount);
     }
 
     @Override
     public void removeStockData(Long bookId) {
-        stockRepository.deleteBook(bookId);
-        System.out.println("Stock data cleared for book ID: " + bookId);
+        if (bookId != null) {
+            stockRepository.deleteBook(bookId);
+            System.out.println("Stock data cleared for book ID: " + bookId);
+        }
     }
 
     @Override
     public List<StockEntity> findAllBooks() {
         return stockRepository.findAll();
     }
-
-
 }

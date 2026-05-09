@@ -1,25 +1,16 @@
 package service.impl;
 
-import serialization.config.ApplicationConfig;
-import entity.BookEntity;
-import entity.OrderEntity;
-import entity.OrderItemEntity;
-import entity.OrderStatus;
-
-import exception.BookNotFoundException;
-import exception.BooksAreOutOfStockException;
-import exception.OrderNotFoundException;
-import exception.StatusChangingException;
+import entity.*;
+import exception.*;
 import repository.interfaces.OrderRepository;
 import service.interfaces.BookService;
 import service.interfaces.OrderService;
 import service.interfaces.StockService;
+import serialization.config.ApplicationConfig;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OrderServiceImpl implements OrderService {
 
@@ -40,18 +31,23 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void createOrder(Long userId, String bookTitle, Integer quantity) {
-        // flagpole on open/close bookstore
-        if(config.isAllowChangeAvailability()) {
-            BookEntity book = validateAndGetBookByTitle(bookTitle, quantity);
 
-            OrderItemEntity item = createOrderItem(book, quantity);
-            OrderEntity order = buildOrder(userId, item);
-
-            saveOrderAndUpdateStock(order, book.getId(), quantity);
-            System.out.println("Success: Order created. Total: " + order.getTotalPrice());
-        } else {
-            System.out.println("Sorry bookstore is closed!");
+        if (!config.isAllowChangeAvailability()) {
+            System.out.println("Sorry, the bookstore is closed!");
+            return;
         }
+
+        BookEntity book = validateAndGetBookByTitle(bookTitle, quantity);
+
+        OrderItemEntity item = createOrderItem(book, quantity);
+        OrderEntity order = buildOrder(userId, item);
+
+        orderRepository.save(order);
+
+        Integer currentStock = stockService.getBookQuantity(book.getId());
+        stockService.updateQuantity(book.getId(),currentStock - quantity);
+
+        System.out.println("Success: Order created. ID: " + order.getId() + ", Total: " + order.getTotalPrice());
     }
 
     @Override
@@ -64,14 +60,14 @@ public class OrderServiceImpl implements OrderService {
         }
 
         for (OrderItemEntity item : order.getListBooksInOrder()) {
-            stockService.updateQuantity(item.getBookId(), item.getNumberOfBooks());
+            stockService.updateQuantity(item.getBookId(), -item.getNumberOfBooks());
         }
 
         order.setOrderStatus(OrderStatus.CANCELLED);
         order.setFinishedTimestamp(LocalDateTime.now());
         orderRepository.save(order);
 
-        System.out.println("Success: Order " + orderId + " is CANCELED.");
+        System.out.println("Success: Order " + orderId + " is CANCELLED.");
     }
 
     @Override
@@ -87,7 +83,12 @@ public class OrderServiceImpl implements OrderService {
         order.setFinishedTimestamp(LocalDateTime.now());
         orderRepository.save(order);
 
-        System.out.println("Success! Order: " + orderId + " is FINISHED.");
+        System.out.println("Success: Order " + orderId + " is FINISHED.");
+    }
+
+    @Override
+    public List<OrderEntity> getOrdersByUserId(Long userId) {
+        return orderRepository.findAllByUserId(userId);
     }
 
     @Override
@@ -102,8 +103,7 @@ public class OrderServiceImpl implements OrderService {
                         Comparator.nullsLast(Comparator.naturalOrder()))
         );
 
-        Comparator<OrderEntity> comparator = strategy.getOrDefault(sortBy.toLowerCase(),
-                (o1, o2) -> 0);
+        Comparator<OrderEntity> comparator = strategy.getOrDefault(sortBy.toLowerCase(), (o1, o2) -> 0);
 
         return allOrders.stream()
                 .sorted(comparator)
@@ -112,26 +112,14 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
     }
 
+    // Helper methods
 
-
-    @Override
-    public List<OrderEntity> getOrdersByUserId(Long userId) {
-        return orderRepository.findAllByUserId(userId);
-    }
-
-    // Helper methods (When we'll use Spring and Hibernate we'll fix it up
     private BookEntity validateAndGetBookByTitle(String title, Integer quantity) {
-        BookEntity book = null;
-        for (BookEntity b : bookService.findAllBooksInCatalog()) {
-            if (b.getTitle().equalsIgnoreCase(title)) {
-                book = b;
-                break;
-            }
-        }
 
-        if (book == null) {
-            throw new BookNotFoundException();
-        }
+        BookEntity book = bookService.findAllBooksInCatalog().stream()
+                .filter(b -> b.getTitle().equalsIgnoreCase(title))
+                .findFirst()
+                .orElseThrow(() -> new BookNotFoundException());
 
         if (!stockService.doWeHaveThatBooksInStock(book.getId(), quantity)) {
             throw new BooksAreOutOfStockException();
@@ -157,10 +145,5 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalPrice(total);
         order.getListBooksInOrder().add(item);
         return order;
-    }
-
-    private void saveOrderAndUpdateStock(OrderEntity order, Long bookId, Integer quantity) {
-        orderRepository.save(order);
-        stockService.updateQuantity(bookId, -quantity);
     }
 }

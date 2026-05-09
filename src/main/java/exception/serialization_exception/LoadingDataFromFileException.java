@@ -1,4 +1,4 @@
-package exception.serialization_exceptions;
+package exception.serialization_exception;
 
 public class LoadingDataFromFileException extends Exception {
 

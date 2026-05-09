@@ -92,12 +92,12 @@
   <!--  globalXsltFile, then defaults to original behavior.                 -->
   <!--                                                                      -->
   <!--   localXsltFile       Make directory listings an XML doc and         -->
-  <!--                       pass the result to this style sheet residing   -->
+  <!--                       pass the result.img to this style sheet residing   -->
   <!--                       in that directory. This overrides              -->
   <!--                       contextXsltFile and globalXsltFile[null]       -->
   <!--                                                                      -->
   <!--   contextXsltFile     Make directory listings an XML doc and         -->
-  <!--                       pass the result to this style sheet which is   -->
+  <!--                       pass the result.img to this style sheet which is   -->
   <!--                       relative to the context root. This overrides   -->
   <!--                       globalXsltFile[null]                           -->
   <!--                                                                      -->

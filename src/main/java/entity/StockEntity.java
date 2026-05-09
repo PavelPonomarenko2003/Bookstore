@@ -11,7 +11,7 @@ public class StockEntity extends BaseEntity{
     private Integer numberOfBooksInStock;
 
     public StockEntity(Long bookId, Integer numberOfBooksInStock) {
-        super();
+        super(bookId);
         this.numberOfBooksInStock = numberOfBooksInStock;
     }
 

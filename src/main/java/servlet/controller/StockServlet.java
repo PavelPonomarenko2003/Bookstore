@@ -1,14 +1,10 @@
 package servlet.controller;
 
-import dto.BookstoreStorageForSerializingDTO;
 import dto.MessageResponse;
 import dto.ResponseEntityDTO;
 import entity.StockEntity;
 import exception.ServletExceptionCustom;
 import exception.exception_handling.ServletExceptionHandling;
-import exception.serialization_exceptions.DataWritingToFileException;
-import exception.serialization_exceptions.FileNotFoundExceptionCustom;
-import exception.serialization_exceptions.LoadingDataFromFileException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,7 +15,6 @@ import repository.impl.StockRepositoryImpl;
 import repository.interfaces.BookRepository;
 import repository.interfaces.OrderRepository;
 import repository.interfaces.StockRepository;
-import serialization.SerializationUtility;
 import serialization.config.ApplicationConfig;
 import service.impl.BookServiceImpl;
 import service.impl.OrderServiceImpl;
@@ -42,33 +37,10 @@ public class StockServlet extends HttpServlet {
     @Override
     public void init() {
 
-        BookstoreStorageForSerializingDTO state = null;
-        try {
-            SerializationUtility serializationUtility = new SerializationUtility();
-            state = (BookstoreStorageForSerializingDTO) serializationUtility.load("saving.bin");
-        } catch (FileNotFoundExceptionCustom e) {
-            System.out.println("Save file not found. We make conclusions that our stock is empty now!");
-        } catch (LoadingDataFromFileException e) {
-            System.err.println("Error loading stock data: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Unexpected error: " + e.getMessage());
-        }
+        StockRepository stockRepository = new StockRepositoryImpl();
+        BookRepository bookRepository = new BookRepositoryImpl();
+        OrderRepository orderRepository = new OrderRepositoryImpl();
 
-        StockRepository stockRepository;
-        BookRepository bookRepository;
-        OrderRepository orderRepository;
-
-        if (state != null) {
-            stockRepository = new StockRepositoryImpl(state.getListOfStock());
-            bookRepository = new BookRepositoryImpl(state.getListOfBooks());
-            orderRepository = new OrderRepositoryImpl(state.getListOfOrders());
-        } else {
-            stockRepository = new StockRepositoryImpl();
-            bookRepository = new BookRepositoryImpl();
-            orderRepository = new OrderRepositoryImpl();
-        }
-
-        // 3. Initialize Services
         this.stockService = new StockServiceImpl(stockRepository);
         this.bookService = new BookServiceImpl(bookRepository, this.stockService);
 
@@ -77,8 +49,10 @@ public class StockServlet extends HttpServlet {
             ApplicationConfig config = new ApplicationConfig(configPath);
             this.orderService = new OrderServiceImpl(orderRepository, this.bookService, this.stockService, config);
         } catch (Exception e) {
-            System.err.println("Configuration load failed.");
+            System.err.println("Configuration load failed in StockServlet!");
         }
+
+        System.out.println("StockServlet initialized with MySQL.");
     }
 
     @Override
@@ -119,20 +93,6 @@ public class StockServlet extends HttpServlet {
 
     @Override
     public void destroy() {
-        try {
-            BookstoreStorageForSerializingDTO state = new BookstoreStorageForSerializingDTO(
-                    bookService.findAllBooksInCatalog(),
-                    orderService.getOrdersByUserId(1L),
-                    stockService.findAllBooks()
-            );
-
-            SerializationUtility serializationUtility = new SerializationUtility();
-            serializationUtility.save(state, "saving.bin");
-            System.out.println("Stock data saved successfully.");
-        } catch (FileNotFoundExceptionCustom | DataWritingToFileException e) {
-            System.err.println("Save failed: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Unexpected save error: " + e.getMessage());
-        }
+        System.out.println("StockServlet context destroyed.");
     }
 }

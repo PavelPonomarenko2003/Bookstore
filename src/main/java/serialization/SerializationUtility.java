@@ -1,8 +1,8 @@
 package serialization;
 
-import exception.serialization_exceptions.DataWritingToFileException;
-import exception.serialization_exceptions.FileNotFoundExceptionCustom;
-import exception.serialization_exceptions.LoadingDataFromFileException;
+import exception.serialization_exception.DataWritingToFileException;
+import exception.serialization_exception.FileNotFoundExceptionCustom;
+import exception.serialization_exception.LoadingDataFromFileException;
 
 import java.io.FileOutputStream;
 import java.io.IOException;

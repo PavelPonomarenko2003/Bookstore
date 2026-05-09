@@ -1,15 +1,11 @@
 package servlet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dto.BookstoreStorageForSerializingDTO;
 import dto.MessageResponse;
 import dto.ResponseEntityDTO;
 import entity.BookEntity;
 import exception.ServletExceptionCustom;
 import exception.exception_handling.ServletExceptionHandling;
-import exception.serialization_exceptions.DataWritingToFileException;
-import exception.serialization_exceptions.FileNotFoundExceptionCustom;
-import exception.serialization_exceptions.LoadingDataFromFileException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +16,6 @@ import repository.impl.StockRepositoryImpl;
 import repository.interfaces.BookRepository;
 import repository.interfaces.OrderRepository;
 import repository.interfaces.StockRepository;
-import serialization.SerializationUtility;
 import serialization.config.ApplicationConfig;
 import service.impl.BookServiceImpl;
 import service.impl.OrderServiceImpl;
@@ -31,10 +26,6 @@ import servlet.utility.ResponseHandlerForHttp;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * Serializations from my file saving.bin using in methods init/destroy
- * replace it from my console ui to this methods
- */
 @WebServlet("/books")
 public class BookServlet extends HttpServlet {
 
@@ -46,31 +37,9 @@ public class BookServlet extends HttpServlet {
     @Override
     public void init() {
 
-        BookstoreStorageForSerializingDTO state = null;
-        try {
-            SerializationUtility serializationUtility = new SerializationUtility();
-            state = (BookstoreStorageForSerializingDTO) serializationUtility.load("saving.bin");
-        } catch (FileNotFoundExceptionCustom exception) {
-            System.out.println("Save file not found. We make conclusions that we don't have any book in catalog!");
-        } catch (LoadingDataFromFileException exception) {
-            System.err.println("Error while loading data from file: " + exception.getMessage());
-        } catch (Exception exception) {
-            System.err.println("Unexpected error during data loading: " + exception.getMessage());
-        }
-
-        BookRepository bookRepository;
-        StockRepository stockRepository;
-        OrderRepository orderRepository;
-
-        if (state != null) {
-            bookRepository = new BookRepositoryImpl(state.getListOfBooks());
-            stockRepository = new StockRepositoryImpl(state.getListOfStock());
-            orderRepository = new OrderRepositoryImpl(state.getListOfOrders());
-        } else {
-            bookRepository = new BookRepositoryImpl();
-            stockRepository = new StockRepositoryImpl();
-            orderRepository = new OrderRepositoryImpl();
-        }
+        BookRepository bookRepository = new BookRepositoryImpl();
+        StockRepository stockRepository = new StockRepositoryImpl();
+        OrderRepository orderRepository = new OrderRepositoryImpl();
 
         this.stockService = new StockServiceImpl(stockRepository);
         this.bookService = new BookServiceImpl(bookRepository, this.stockService);
@@ -80,10 +49,11 @@ public class BookServlet extends HttpServlet {
             ApplicationConfig config = new ApplicationConfig(configPath);
             this.orderService = new OrderServiceImpl(orderRepository, this.bookService, this.stockService, config);
         } catch (Exception e) {
-            System.err.println("Could not load application.properties!");
+            System.err.println("Configuration load failed in BookServlet!");
         }
 
         this.objectMapper = new ObjectMapper();
+        System.out.println("BookServlet initialized with MySQL!!!");
     }
 
     @Override
@@ -135,23 +105,6 @@ public class BookServlet extends HttpServlet {
 
     @Override
     public void destroy() {
-        try {
-            BookstoreStorageForSerializingDTO state = new BookstoreStorageForSerializingDTO(
-                    bookService.findAllBooksInCatalog(),
-                    orderService.getOrdersByUserId(1L),
-                    stockService.findAllBooks()
-            );
-
-            SerializationUtility serializationUtility = new SerializationUtility();
-            serializationUtility.save(state, "saving.bin");
-            System.out.println("Data saved successfully before server shutdown.");
-
-        } catch (FileNotFoundExceptionCustom exception) {
-            System.err.println("Save failed! Path is invalid or null.");
-        } catch (DataWritingToFileException exception) {
-            System.err.println("Error writing data to file: " + exception.getMessage());
-        } catch (Exception exception) {
-            System.err.println("Unexpected error during data saving: " + exception.getMessage());
-        }
+        System.out.println("BookServlet context destroyed.");
     }
 }

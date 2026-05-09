@@ -6,6 +6,7 @@ out/
 .kotlin
 .idea/
 *.iml
+.smarttomcat/
 
 # Data saving file
 saving.bin

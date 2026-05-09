@@ -1,15 +1,13 @@
 package servlet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dto.BookstoreStorageForSerializingDTO;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dto.MessageResponse;
 import dto.OrderRequestDTO;
 import dto.ResponseEntityDTO;
 import entity.OrderEntity;
 import exception.exception_handling.ServletExceptionHandling;
-import exception.serialization_exceptions.DataWritingToFileException;
-import exception.serialization_exceptions.FileNotFoundExceptionCustom;
-import exception.serialization_exceptions.LoadingDataFromFileException;
+import exception.ServletExceptionCustom;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,8 +18,8 @@ import repository.impl.StockRepositoryImpl;
 import repository.interfaces.BookRepository;
 import repository.interfaces.OrderRepository;
 import repository.interfaces.StockRepository;
-import serialization.SerializationUtility;
 import serialization.config.ApplicationConfig;
+import service.impl.BookRecommendationService;
 import service.impl.BookServiceImpl;
 import service.impl.OrderServiceImpl;
 import service.impl.StockServiceImpl;
@@ -37,58 +35,47 @@ import java.util.List;
 public class OrderServlet extends HttpServlet {
 
     private OrderService orderService;
-    private BookService bookService;
-    private StockService stockService;
+    private BookRecommendationService recService;
     private ObjectMapper objectMapper;
 
     @Override
     public void init() {
 
-        BookstoreStorageForSerializingDTO state = null;
+        OrderRepository orderRepository = new OrderRepositoryImpl();
+        BookRepository bookRepository = new BookRepositoryImpl();
+        StockRepository stockRepository = new StockRepositoryImpl();
+
+        StockService stockService = new StockServiceImpl(stockRepository);
+        BookService bookService = new BookServiceImpl(bookRepository, stockService);
+
+        this.recService = new BookRecommendationService();
+
         try {
-            SerializationUtility serializationUtility = new SerializationUtility();
-            state = (BookstoreStorageForSerializingDTO) serializationUtility.load("saving.bin");
-        } catch (FileNotFoundExceptionCustom e) {
-            System.out.println("Save file not found. We make conclusions that we don't have any orders!");
-        } catch (LoadingDataFromFileException e) {
-            System.err.println("Error loading order data: " + e.getMessage());
+            String configPath = getClass().getClassLoader().getResource("application.properties").getPath();
+            ApplicationConfig config = new ApplicationConfig(configPath);
+            this.orderService = new OrderServiceImpl(orderRepository, bookService, stockService, config);
         } catch (Exception e) {
-            System.err.println("Unexpected error: " + e.getMessage());
+            System.err.println("Configuration load failed in OrderServlet!");
         }
 
-        BookRepository bookRepository;
-        StockRepository stockRepository;
-        OrderRepository orderRepository;
-
-        if (state != null) {
-            bookRepository = new BookRepositoryImpl(state.getListOfBooks());
-            stockRepository = new StockRepositoryImpl(state.getListOfStock());
-            orderRepository = new OrderRepositoryImpl(state.getListOfOrders());
-        } else {
-            bookRepository = new BookRepositoryImpl();
-            stockRepository = new StockRepositoryImpl();
-            orderRepository = new OrderRepositoryImpl();
-        }
-
-        this.stockService = new StockServiceImpl(stockRepository);
-        this.bookService = new BookServiceImpl(bookRepository, this.stockService);
-
-        String configPath = getClass().getClassLoader().getResource("application.properties").getPath();
-        ApplicationConfig config = new ApplicationConfig(configPath);
-
-        this.orderService = new OrderServiceImpl(orderRepository, this.bookService, this.stockService, config);
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
+
+        System.out.println("OrderServlet fully refactored and initialized.");
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             String sortBy = request.getParameter("sortBy");
-            int page = request.getParameter("page") != null ? Integer.parseInt(request.getParameter("page")) : 1;
-            int size = request.getParameter("size") != null ? Integer.parseInt(request.getParameter("size")) : 3;
+            int page = (request.getParameter("page") != null) ? Integer.parseInt(request.getParameter("page")) : 1;
+            int size = (request.getParameter("size") != null) ? Integer.parseInt(request.getParameter("size")) : 3;
 
             List<OrderEntity> orders = orderService.getSortedOrders(sortBy != null ? sortBy : "id", page, size);
+
             ResponseHandlerForHttp.send(response, ResponseEntityDTO.status(HttpServletResponse.SC_OK, orders));
+        } catch (NumberFormatException e) {
+            ServletExceptionHandling.handle(response, new ServletExceptionCustom("Page and Size must be numbers!", 400));
         } catch (Exception exception) {
             ServletExceptionHandling.handle(response, exception);
         }
@@ -98,12 +85,19 @@ public class OrderServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             OrderRequestDTO dto = objectMapper.readValue(request.getInputStream(), OrderRequestDTO.class);
+
             orderService.createOrder(dto.getUserId(), dto.getBookTitle(), dto.getQuantity());
 
+            // Adding purchase into db neo4j
+            recService.addPurchase(dto.getUserId(), dto.getBookTitle());
+            List<String> recommendations = recService.getRecommendations(dto.getUserId());
+
+            String message = "Order created! Your recommendations: " + recommendations;
             ResponseHandlerForHttp.send(response, ResponseEntityDTO.status(
                     HttpServletResponse.SC_CREATED,
-                    new MessageResponse("Order created successfully")
+                    new MessageResponse(message)
             ));
+
         } catch (Exception e) {
             ServletExceptionHandling.handle(response, e);
         }
@@ -112,17 +106,27 @@ public class OrderServlet extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
-            Long id = Long.valueOf(request.getParameter("id"));
+            String idParam = request.getParameter("id");
             String action = request.getParameter("action");
+
+            if (idParam == null || action == null) {
+                throw new ServletExceptionCustom("Parameters 'id' and 'action' are required!", 400);
+            }
+
+            Long id = Long.valueOf(idParam);
 
             if ("complete".equalsIgnoreCase(action)) {
                 orderService.completeOrder(id);
             } else if ("cancel".equalsIgnoreCase(action)) {
                 orderService.cancelOrder(id);
+            } else {
+                throw new ServletExceptionCustom("Unknown action: " + action, 400);
             }
 
-            ResponseHandlerForHttp.send(response, ResponseEntityDTO.status(HttpServletResponse.SC_OK,
-                    new MessageResponse("Status updated!")));
+            ResponseHandlerForHttp.send(response, ResponseEntityDTO.status(
+                    HttpServletResponse.SC_OK,
+                    new MessageResponse("Order status updated successfully!")
+            ));
         } catch (Exception e) {
             ServletExceptionHandling.handle(response, e);
         }
@@ -130,21 +134,6 @@ public class OrderServlet extends HttpServlet {
 
     @Override
     public void destroy() {
-        try {
-            BookstoreStorageForSerializingDTO state = new BookstoreStorageForSerializingDTO(
-                    bookService.findAllBooksInCatalog(),
-                    orderService.getOrdersByUserId(1L),
-                    stockService.findAllBooks()
-            );
-
-            SerializationUtility serializationUtility = new SerializationUtility();
-            serializationUtility.save(state, "saving.bin");
-            System.out.println("All order data saved successfully!");
-
-        } catch (FileNotFoundExceptionCustom | DataWritingToFileException exception) {
-            System.err.println("Save failed during shutdown: " + exception.getMessage());
-        } catch (Exception exception) {
-            System.err.println("Unexpected save error: " + exception.getMessage());
-        }
+        System.out.println("OrderServlet context destroyed.");
     }
 }
