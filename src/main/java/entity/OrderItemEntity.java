@@ -8,7 +8,6 @@ import java.util.Objects;
 
 /**
  * Entity that will provide short description about our purchase
- * Composite PK
  */
 @Entity
 @Table(name = "order_items")
