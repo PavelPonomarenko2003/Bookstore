@@ -46,6 +46,19 @@ public class OrderEntity extends BaseEntity{
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItemEntity> listBooksInOrder = new ArrayList<>();
 
+    public void addOrderItem(OrderItemEntity item) {
+        this.listBooksInOrder.add(item);
+        item.setOrder(this);
+    }
+
+    public List<OrderItemEntity> getListBooksInOrder() {
+        return listBooksInOrder;
+    }
+
+    public void setListBooksInOrder(List<OrderItemEntity> listBooksInOrder) {
+        this.listBooksInOrder = listBooksInOrder;
+    }
+
     public OrderEntity(
             UserEntity user,
             BigDecimal totalPrice,
