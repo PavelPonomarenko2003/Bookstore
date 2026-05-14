@@ -2,6 +2,7 @@ package service.impl;
 
 import entity.*;
 import exception.*;
+import repository.interfaces.BookRepository;
 import repository.interfaces.OrderRepository;
 import service.interfaces.BookService;
 import service.interfaces.OrderService;
@@ -15,15 +16,18 @@ import java.util.*;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
+    private final BookRepository bookRepository;
     private final BookService bookService;
     private final StockService stockService;
     private final ApplicationConfig config;
 
     public OrderServiceImpl(OrderRepository orderRepository,
+                            BookRepository bookRepository,
                             BookService bookService,
                             StockService stockService,
                             ApplicationConfig config) {
         this.orderRepository = orderRepository;
+        this.bookRepository = bookRepository;
         this.bookService = bookService;
         this.stockService = stockService;
         this.config = config;
@@ -31,21 +35,42 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void createOrder(Long userId, String bookTitle, Integer quantity) {
-
         if (!config.isAllowChangeAvailability()) {
             System.out.println("Sorry, the bookstore is closed!");
             return;
         }
 
-        BookEntity book = validateAndGetBookByTitle(bookTitle, quantity);
+        BookEntity book = bookRepository.findByTitle(bookTitle)
+                .orElseThrow(BookNotFoundException::new);
 
-        OrderItemEntity item = createOrderItem(book, quantity);
-        OrderEntity order = buildOrder(userId, item);
+        if (!stockService.doWeHaveThatBooksInStock(book.getId(), quantity)) {
+            throw new BooksAreOutOfStockException();
+        }
+
+        OrderEntity order = new OrderEntity();
+
+        UserEntity userProxy = new UserEntity();
+        userProxy.setId(userId);
+
+        order.setUser(userProxy);
+        order.setCreatedTimestamp(LocalDateTime.now());
+        order.setOrderStatus(OrderStatus.OPENED);
+
+        OrderItemEntity item = new OrderItemEntity();
+        item.setBook(book);
+        item.setNumberOfBooks(quantity);
+        item.setPriceAtTheTimeOfPurchase(book.getPrice());
+
+        item.setOrder(order);
+        order.getListBooksInOrder().add(item);
+
+        BigDecimal total = book.getPrice().multiply(BigDecimal.valueOf(quantity));
+        order.setTotalPrice(total);
 
         orderRepository.save(order);
 
         Integer currentStock = stockService.getBookQuantity(book.getId());
-        stockService.updateQuantity(book.getId(),currentStock - quantity);
+        stockService.updateQuantity(book.getId(), currentStock - quantity);
 
         System.out.println("Success: Order created. ID: " + order.getId() + ", Total: " + order.getTotalPrice());
     }
@@ -60,11 +85,13 @@ public class OrderServiceImpl implements OrderService {
         }
 
         for (OrderItemEntity item : order.getListBooksInOrder()) {
-            stockService.updateQuantity(item.getBookId(), -item.getNumberOfBooks());
+            Long bookId = item.getBook().getId();
+            stockService.updateQuantity(bookId, -item.getNumberOfBooks());
         }
 
         order.setOrderStatus(OrderStatus.CANCELLED);
         order.setFinishedTimestamp(LocalDateTime.now());
+
         orderRepository.save(order);
 
         System.out.println("Success: Order " + orderId + " is CANCELLED.");
@@ -110,40 +137,5 @@ public class OrderServiceImpl implements OrderService {
                 .skip((long) (page - 1) * pageSize)
                 .limit(pageSize)
                 .toList();
-    }
-
-    // Helper methods
-
-    private BookEntity validateAndGetBookByTitle(String title, Integer quantity) {
-
-        BookEntity book = bookService.findAllBooksInCatalog().stream()
-                .filter(b -> b.getTitle().equalsIgnoreCase(title))
-                .findFirst()
-                .orElseThrow(() -> new BookNotFoundException());
-
-        if (!stockService.doWeHaveThatBooksInStock(book.getId(), quantity)) {
-            throw new BooksAreOutOfStockException();
-        }
-        return book;
-    }
-
-    private OrderItemEntity createOrderItem(BookEntity book, Integer quantity) {
-        OrderItemEntity item = new OrderItemEntity();
-        item.setBookId(book.getId());
-        item.setNumberOfBooks(quantity);
-        item.setPriceAtTheTimeOfPurchase(book.getPrice());
-        return item;
-    }
-
-    private OrderEntity buildOrder(Long userId, OrderItemEntity item) {
-        OrderEntity order = new OrderEntity();
-        order.setUserId(userId);
-        order.setCreatedTimestamp(LocalDateTime.now());
-        order.setOrderStatus(OrderStatus.OPENED);
-
-        BigDecimal total = item.getPriceAtTheTimeOfPurchase().multiply(BigDecimal.valueOf(item.getNumberOfBooks()));
-        order.setTotalPrice(total);
-        order.getListBooksInOrder().add(item);
-        return order;
     }
 }

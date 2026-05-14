@@ -17,6 +17,9 @@ public class ApplicationConfig {
     private String dbPassword;
     private boolean allowChangeAvailability;
 
+    public ApplicationConfig() {
+    }
+
     public ApplicationConfig(String fileName) {
         Properties properties = new Properties();
 
@@ -25,7 +28,7 @@ public class ApplicationConfig {
 
             this.dbUrl = properties.getProperty(KEY_DB_URL, "jdbc:mysql://localhost:3306/bookstore_db");
             this.dbUser = properties.getProperty(KEY_DB_USER, "root");
-            this.dbPassword = properties.getProperty(KEY_DB_PASS, "");
+            this.dbPassword = properties.getProperty(KEY_DB_PASS, "root");
 
             this.allowChangeAvailability = Boolean.parseBoolean(
                     properties.getProperty(KEY_AVAILABILITY, "true")
@@ -36,7 +39,6 @@ public class ApplicationConfig {
         }
     }
 
-    // getters for Hikari
     public String getDbUrl() {
         return dbUrl;
     }

@@ -18,6 +18,14 @@
 
     <dependencies>
 
+        <!-- For threads -->
+
+        <dependency>
+            <groupId>net.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
+            <version>1.0</version>
+        </dependency>
+
         <!-- Adding Junit-5 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -83,6 +91,13 @@
             <groupId>org.neo4j.driver</groupId>
             <artifactId>neo4j-java-driver</artifactId>
             <version>5.15.0</version>
+        </dependency>
+
+        <!-- Adding Hibernate -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>6.4.0.Final</version>
         </dependency>
 
     </dependencies>

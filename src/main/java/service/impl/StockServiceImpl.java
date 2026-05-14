@@ -16,13 +16,12 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public void updateQuantity(Long bookId, Integer amount) {
-
         if (bookId == null) {
             throw new IllegalArgumentException("Book ID cannot be null for stock update");
         }
 
         stockRepository.updateBooksQuantity(bookId, amount);
-        System.out.println("Stock updated for book ID: " + bookId + ". Change: " + amount);
+        System.out.println("Stock updated for book ID: " + bookId + ". Absolute quantity set to: " + amount);
     }
 
     @Override
@@ -33,7 +32,6 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public boolean doWeHaveThatBooksInStock(Long bookId, Integer requestedAmount) {
-
         if (requestedAmount == null || requestedAmount < 0) {
             return false;
         }

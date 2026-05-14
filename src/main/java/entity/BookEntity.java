@@ -1,5 +1,9 @@
 package entity;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+
 import java.awt.print.Book;
 import java.io.Serial;
 import java.math.BigDecimal;
@@ -9,12 +13,17 @@ import java.util.Objects;
  * Entity that provide descriptions about every book
  */
 
+@Entity
+@Table(name = "books")
 public class BookEntity extends BaseEntity{
 
     @Serial
     private static final long serialVersionUID = 1L;
 
+    @Column(name = "title")
     private String title;
+
+    @Column(name = "price")
     private BigDecimal price;
 
     public BookEntity(Long id, String title, BigDecimal price) {
@@ -24,7 +33,6 @@ public class BookEntity extends BaseEntity{
         this.price = price;
     }
 
-
     public BookEntity(String title, BigDecimal price) {
         super();
         this.title = title;
@@ -32,6 +40,7 @@ public class BookEntity extends BaseEntity{
     }
 
     public BookEntity() {
+        super();
     }
 
     public String getTitle() {
@@ -73,5 +82,4 @@ public class BookEntity extends BaseEntity{
         if(getId() != null) return Objects.hash(getId());
         else return Objects.hash(title);
     }
-
 }

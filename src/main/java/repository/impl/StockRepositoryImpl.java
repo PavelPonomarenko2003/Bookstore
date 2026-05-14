@@ -1,31 +1,52 @@
 package repository.impl;
 
 import entity.StockEntity;
+import exception.sql_exception.DataStorageException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.NoResultException;
 import repository.interfaces.StockRepository;
-import repository.mapper.impl.StockDbToObjectMapper;
 
-import java.util.List;
-import java.util.Optional;
+public class StockRepositoryImpl extends JpaBaseRepository<StockEntity, Long> implements StockRepository {
 
-public class StockRepositoryImpl extends JdbcBaseRepository<StockEntity, Long> implements StockRepository {
-
-    private final StockDbToObjectMapper stockMapper = new StockDbToObjectMapper();
+    public StockRepositoryImpl(EntityManagerFactory entityManagerFactory) {
+        super(entityManagerFactory, StockEntity.class);
+    }
 
     @Override
     public void updateBooksQuantity(Long bookId, Integer quantity) {
-        String sql = "INSERT INTO stock (book_id, quantity) VALUES (?, ?) " +
-                "ON DUPLICATE KEY UPDATE quantity = VALUES(quantity)";
+        EntityManager entityManager = null;
+        try {
+            entityManager = entityManagerFactory.createEntityManager();
+            entityManager.getTransaction().begin();
+            String sqlQuery = "INSERT INTO stock (book_id, quantity) VALUES (?, ?) " +
+                    "ON DUPLICATE KEY UPDATE quantity = VALUES(quantity)";
+            entityManager.createNativeQuery(sqlQuery)
+                    .setParameter(1, bookId)
+                    .setParameter(2, quantity)
+                    .executeUpdate();
 
-        executeUpdate(sql, bookId, quantity);
+            entityManager.getTransaction().commit();
+        } catch (Exception exception) {
+            if(entityManager != null && entityManager.getTransaction().isActive()) {
+                entityManager.getTransaction().rollback();
+            }
+            throw new DataStorageException("Error during updating stock quantity!", exception);
+        }
     }
 
     @Override
     public Integer getQuantity(Long bookId) {
-        String sql = "SELECT quantity FROM stock WHERE book_id = ?";
-
-        List<Integer> result = executeQuery(sql, rs -> rs.getInt("quantity"), bookId);
-
-        return result.stream().findFirst().orElse(0);
+        try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
+            String jpqlQuery = "SELECT s.numberOfBooksInStock FROM StockEntity s WHERE book.id = :bookId";
+            return entityManager.createQuery(jpqlQuery, Integer.class)
+                    .setParameter("bookId", bookId)
+                    .getSingleResult();
+        } catch (NoResultException exception) {
+            return 0;
+        } catch (Exception exception) {
+            throw new DataStorageException("Error during getting stock quantity!", exception);
+        }
     }
 
     @Override
@@ -33,31 +54,30 @@ public class StockRepositoryImpl extends JdbcBaseRepository<StockEntity, Long> i
         return getQuantity(bookId) >= requestedQuantity;
     }
 
+
     @Override
     public void deleteBook(Long bookId) {
-        String sql = "DELETE FROM stock WHERE book_id = ?";
-        executeUpdate(sql, bookId);
-    }
+        EntityManager entityManager = null;
+        try {
+            entityManager = entityManagerFactory.createEntityManager();
+            entityManager.getTransaction().begin();
 
-    @Override
-    public void save(StockEntity entity) {
-        updateBooksQuantity(entity.getId(), entity.getNumberOfBooksInStock());
-    }
+            String jpql = "DELETE FROM StockEntity s WHERE s.book.id = :bookId";
 
-    @Override
-    public Optional<StockEntity> findById(Long id) {
-        String sql = "SELECT * FROM stock WHERE book_id = ?";
-        return executeQuery(sql, stockMapper, id).stream().findFirst();
-    }
+            entityManager.createQuery(jpql)
+                    .setParameter("bookId", bookId)
+                    .executeUpdate();
 
-    @Override
-    public List<StockEntity> findAll() {
-        String sql = "SELECT * FROM stock";
-        return executeQuery(sql, stockMapper);
-    }
-
-    @Override
-    public void delete(Long id) {
-        deleteBook(id);
+            entityManager.getTransaction().commit();
+        } catch (Exception exception) {
+            if (entityManager != null && entityManager.getTransaction().isActive()) {
+                entityManager.getTransaction().rollback();
+            }
+            throw new DataStorageException("Error during deleting book from stock!", exception);
+        } finally {
+            if (entityManager != null && entityManager.isOpen()) {
+                entityManager.close();
+            }
+        }
     }
 }

@@ -1,5 +1,7 @@
 package entity;
 
+import jakarta.persistence.*;
+
 import java.io.Serial;
 
 /**
@@ -7,12 +9,18 @@ import java.io.Serial;
  * (for future logic)
  */
 
+@Entity
+@Table(name = "users")
 public class UserEntity extends BaseEntity{
 
     @Serial
     private static final long serialVersionUID = 1L;
 
+    @Column(name = "username")
     private String username;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 
     public UserEntity(String username, Role role) {
@@ -22,6 +30,7 @@ public class UserEntity extends BaseEntity{
     }
 
     public UserEntity() {
+        super();
     }
 
     public String getUsername() {

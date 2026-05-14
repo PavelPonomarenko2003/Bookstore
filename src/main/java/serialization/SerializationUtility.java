@@ -3,6 +3,8 @@ package serialization;
 import exception.serialization_exception.DataWritingToFileException;
 import exception.serialization_exception.FileNotFoundExceptionCustom;
 import exception.serialization_exception.LoadingDataFromFileException;
+import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.ThreadSafe;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -22,10 +24,11 @@ import java.io.FileInputStream;
  * but when we are using stream of bytes that's much faster and more easy transmission
  * less load on the system
  */
+@ThreadSafe
 public class SerializationUtility {
 
     // byte stream out of the program (serialization)
-    public void save(Serializable data, String path)
+    public synchronized void save(Serializable data, String path)
             throws FileNotFoundExceptionCustom, DataWritingToFileException {
         if (path == null) {
             throw new FileNotFoundExceptionCustom(path);
@@ -39,7 +42,7 @@ public class SerializationUtility {
     }
 
     // byte stream into the program (deserialization)
-    public Object load(String path)
+    public synchronized Object load(String path)
             throws FileNotFoundExceptionCustom, LoadingDataFromFileException {
         File file = new File(path);
         if (!file.exists()) {

@@ -1,12 +1,11 @@
 package repository.impl;
 
-import database.my_sql.DataSourceHikariConfiguration;
 import entity.BookEntity;
+import exception.sql_exception.DataStorageException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import repository.interfaces.BookRepository;
-import repository.mapper.impl.BookDbToObjectMapper;
 
-import java.sql.*;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -15,44 +14,25 @@ import java.util.Optional;
  * Right now we have just basic functionality, but in future we can realize new methods
  * Other logic about method's acting and validation we'll make in service
   */
-public class BookRepositoryImpl extends JdbcBaseRepository<BookEntity, Long>
+public class BookRepositoryImpl extends JpaBaseRepository<BookEntity, Long>
         implements BookRepository {
 
-    private final BookDbToObjectMapper bookMapper = new BookDbToObjectMapper();
-
-    @Override
-    public void save(BookEntity entity) {
-        String sql = "INSERT INTO books (title, price) VALUES (?, ?) " +
-                "ON DUPLICATE KEY UPDATE title = VALUES(title), price = VALUES(price)";
-
-        Long generatedId = executeInsert(sql, entity.getTitle(), entity.getPrice());
-
-        if (entity.getId() == null) {
-            entity.setId(generatedId);
-        }
+    public BookRepositoryImpl(EntityManagerFactory entityManagerFactory) {
+        super(entityManagerFactory, BookEntity.class);
     }
 
-    @Override
-    public Optional<BookEntity> findById(Long id) {
-        String sql = "SELECT * FROM books WHERE id = ?";
-        return executeQuery(sql, bookMapper, id).stream().findFirst();
-    }
-
-    @Override
-    public List<BookEntity> findAll() {
-        String sql = "SELECT * FROM books";
-        return executeQuery(sql, bookMapper);
-    }
-
-    @Override
-    public void delete(Long id) {
-        String sql = "DELETE FROM books WHERE id = ?";
-        executeUpdate(sql, id);
-    }
 
     @Override
     public Optional<BookEntity> findByTitle(String title) {
-        String sql = "SELECT * FROM books WHERE LOWER(title) = LOWER(?)";
-        return executeQuery(sql, bookMapper, title).stream().findFirst();
+        try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
+            String query = "SELECT book FROM BookEntity book WHERE LOWER(book.title) = LOWER(:title)";
+            return entityManager.createQuery(query, BookEntity.class)
+                    .setParameter("title", title)
+                    .getResultList()
+                    .stream()
+                    .findFirst();
+        } catch (Exception exception) {
+            throw new DataStorageException("Error during getting book by title!", exception);
+        }
     }
 }

@@ -24,13 +24,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public void addBookIntoCatalogAndUpdateStock(String title, double price, int initialQuantity) {
 
-        if (title == null || title.isBlank()) {
-            throw new IncorrectInputException();
-        }
-        if (price < 0) {
-            throw new IncorrectInputException();
-        }
-        if (initialQuantity < 0) {
+        if (title == null || title.isBlank() || price < 0 || initialQuantity < 0) {
             throw new IncorrectInputException();
         }
 

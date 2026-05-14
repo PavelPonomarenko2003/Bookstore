@@ -12,20 +12,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import repository.impl.BookRepositoryImpl;
-import repository.impl.OrderRepositoryImpl;
-import repository.impl.StockRepositoryImpl;
-import repository.interfaces.BookRepository;
-import repository.interfaces.OrderRepository;
-import repository.interfaces.StockRepository;
-import serialization.config.ApplicationConfig;
 import service.impl.BookRecommendationService;
-import service.impl.BookServiceImpl;
-import service.impl.OrderServiceImpl;
-import service.impl.StockServiceImpl;
-import service.interfaces.BookService;
 import service.interfaces.OrderService;
-import service.interfaces.StockService;
 import servlet.utility.ResponseHandlerForHttp;
 
 import java.io.IOException;
@@ -40,28 +28,14 @@ public class OrderServlet extends HttpServlet {
 
     @Override
     public void init() {
-
-        OrderRepository orderRepository = new OrderRepositoryImpl();
-        BookRepository bookRepository = new BookRepositoryImpl();
-        StockRepository stockRepository = new StockRepositoryImpl();
-
-        StockService stockService = new StockServiceImpl(stockRepository);
-        BookService bookService = new BookServiceImpl(bookRepository, stockService);
-
-        this.recService = new BookRecommendationService();
-
-        try {
-            String configPath = getClass().getClassLoader().getResource("application.properties").getPath();
-            ApplicationConfig config = new ApplicationConfig(configPath);
-            this.orderService = new OrderServiceImpl(orderRepository, bookService, stockService, config);
-        } catch (Exception e) {
-            System.err.println("Configuration load failed in OrderServlet!");
-        }
+        var servletContext = getServletContext();
+        this.orderService = (OrderService) servletContext.getAttribute("orderService");
+        this.recService = (BookRecommendationService) servletContext.getAttribute("recommendationService");
 
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
 
-        System.out.println("OrderServlet fully refactored and initialized.");
+        System.out.println("OrderServlet fully refactored and initialized!");
     }
 
     @Override
@@ -88,7 +62,6 @@ public class OrderServlet extends HttpServlet {
 
             orderService.createOrder(dto.getUserId(), dto.getBookTitle(), dto.getQuantity());
 
-            // Adding purchase into db neo4j
             recService.addPurchase(dto.getUserId(), dto.getBookTitle());
             List<String> recommendations = recService.getRecommendations(dto.getUserId());
 

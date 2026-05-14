@@ -1,6 +1,5 @@
 package service.impl;
 
-import database.neo4j.Neo4jSessionFactoryConfiguration;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
@@ -20,7 +19,12 @@ import static org.neo4j.driver.Values.parameters;
  */
 
 public class BookRecommendationService {
-    private final Driver driver = Neo4jSessionFactoryConfiguration.getDriver();
+
+    private final Driver driver;
+
+    public BookRecommendationService(Driver driver) {
+        this.driver = driver;
+    }
 
     // instead of SQL-language graph db use Cypher-language
     // u - user; b - book

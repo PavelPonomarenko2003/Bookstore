@@ -9,18 +9,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import repository.impl.BookRepositoryImpl;
-import repository.impl.OrderRepositoryImpl;
-import repository.impl.StockRepositoryImpl;
-import repository.interfaces.BookRepository;
-import repository.interfaces.OrderRepository;
-import repository.interfaces.StockRepository;
-import serialization.config.ApplicationConfig;
-import service.impl.BookServiceImpl;
-import service.impl.OrderServiceImpl;
-import service.impl.StockServiceImpl;
-import service.interfaces.BookService;
-import service.interfaces.OrderService;
 import service.interfaces.StockService;
 import servlet.utility.ResponseHandlerForHttp;
 
@@ -31,28 +19,12 @@ import java.util.List;
 public class StockServlet extends HttpServlet {
 
     private StockService stockService;
-    private BookService bookService;
-    private OrderService orderService;
 
     @Override
     public void init() {
+        this.stockService = (StockService) getServletContext().getAttribute("stockService");
 
-        StockRepository stockRepository = new StockRepositoryImpl();
-        BookRepository bookRepository = new BookRepositoryImpl();
-        OrderRepository orderRepository = new OrderRepositoryImpl();
-
-        this.stockService = new StockServiceImpl(stockRepository);
-        this.bookService = new BookServiceImpl(bookRepository, this.stockService);
-
-        try {
-            String configPath = getClass().getClassLoader().getResource("application.properties").getPath();
-            ApplicationConfig config = new ApplicationConfig(configPath);
-            this.orderService = new OrderServiceImpl(orderRepository, this.bookService, this.stockService, config);
-        } catch (Exception e) {
-            System.err.println("Configuration load failed in StockServlet!");
-        }
-
-        System.out.println("StockServlet initialized with MySQL.");
+        System.out.println("StockServlet initialized successfully!");
     }
 
     @Override

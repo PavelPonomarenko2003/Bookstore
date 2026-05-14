@@ -1,6 +1,7 @@
 package servlet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dto.ResponseEntityDTO;
 import exception.ServletExceptionCustom;
 import exception.exception_handling.ServletExceptionHandling;
 import jakarta.servlet.annotation.WebServlet;
@@ -8,6 +9,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import service.impl.BookRecommendationService;
+import servlet.utility.ResponseHandlerForHttp;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,9 +22,11 @@ public class RecommendationServlet extends HttpServlet {
 
     @Override
     public void init() {
-        this.recommendationService = new BookRecommendationService();
+        this.recommendationService = (BookRecommendationService) getServletContext().getAttribute("recommendationService");
+
         this.objectMapper = new ObjectMapper();
-        System.out.println("RecommendationServlet (Neo4j) initialized.");
+
+        System.out.println("RecommendationServlet (Neo4j) initialized successfully!");
     }
 
     @Override
@@ -38,9 +42,7 @@ public class RecommendationServlet extends HttpServlet {
 
             List<String> recommendations = recommendationService.getRecommendations(userId);
 
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(objectMapper.writeValueAsString(recommendations));
+            ResponseHandlerForHttp.send(response, ResponseEntityDTO.status(HttpServletResponse.SC_OK, recommendations));
 
         } catch (NumberFormatException e) {
             ServletExceptionHandling.handle(response, new ServletExceptionCustom("User ID must be a number!", 400));

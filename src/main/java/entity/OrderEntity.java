@@ -2,6 +2,7 @@ package entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.math.BigDecimal;
@@ -12,23 +13,41 @@ import java.util.List;
 /**
  * Entity that provide check about every purchase
  */
+@Entity
+@Table(name = "orders")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrderEntity extends BaseEntity{
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
+
+    @Column(name = "total_price")
     private BigDecimal totalPrice;
+
+    @Column(name = "created_at")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdTimestamp;
+
+    @Column(name = "finished_at")
     private LocalDateTime finishedTimestamp;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     private OrderStatus orderStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method")
     private Payment payment = Payment.CARD;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItemEntity> listBooksInOrder = new ArrayList<>();
 
     public OrderEntity(
-            Long userId,
+            UserEntity user,
             BigDecimal totalPrice,
             LocalDateTime createdTimestamp,
             LocalDateTime finishedTimestamp,
@@ -36,7 +55,7 @@ public class OrderEntity extends BaseEntity{
             List<OrderItemEntity> listBooksInOrder
     ) {
         super();
-        this.userId = userId;
+        this.user = user;
         this.totalPrice = totalPrice;
         this.createdTimestamp = createdTimestamp;
         this.finishedTimestamp = finishedTimestamp;
@@ -46,14 +65,15 @@ public class OrderEntity extends BaseEntity{
     }
 
     public OrderEntity() {
+        super();
     }
 
-    public Long getUserId() {
-        return userId;
+    public UserEntity getUser() {
+        return user;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setUser(UserEntity user) {
+        this.user = user;
     }
 
     public BigDecimal getTotalPrice() {

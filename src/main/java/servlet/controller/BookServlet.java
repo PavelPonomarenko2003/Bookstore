@@ -10,16 +10,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import repository.impl.BookRepositoryImpl;
-import repository.impl.OrderRepositoryImpl;
-import repository.impl.StockRepositoryImpl;
-import repository.interfaces.BookRepository;
-import repository.interfaces.OrderRepository;
-import repository.interfaces.StockRepository;
-import serialization.config.ApplicationConfig;
-import service.impl.BookServiceImpl;
-import service.impl.OrderServiceImpl;
-import service.impl.StockServiceImpl;
+import service.interfaces.BookService; // Переходим на интерфейс вместо реализации
 import dto.BookRequestDTO;
 import servlet.utility.ResponseHandlerForHttp;
 
@@ -29,31 +20,16 @@ import java.util.List;
 @WebServlet("/books")
 public class BookServlet extends HttpServlet {
 
-    private BookServiceImpl bookService;
-    private StockServiceImpl stockService;
-    private OrderServiceImpl orderService;
+    private BookService bookService;
     private ObjectMapper objectMapper;
 
     @Override
     public void init() {
-
-        BookRepository bookRepository = new BookRepositoryImpl();
-        StockRepository stockRepository = new StockRepositoryImpl();
-        OrderRepository orderRepository = new OrderRepositoryImpl();
-
-        this.stockService = new StockServiceImpl(stockRepository);
-        this.bookService = new BookServiceImpl(bookRepository, this.stockService);
-
-        try {
-            String configPath = getClass().getClassLoader().getResource("application.properties").getPath();
-            ApplicationConfig config = new ApplicationConfig(configPath);
-            this.orderService = new OrderServiceImpl(orderRepository, this.bookService, this.stockService, config);
-        } catch (Exception e) {
-            System.err.println("Configuration load failed in BookServlet!");
-        }
+        this.bookService = (BookService) getServletContext().getAttribute("bookService");
 
         this.objectMapper = new ObjectMapper();
-        System.out.println("BookServlet initialized with MySQL!!!");
+
+        System.out.println("BookServlet initialized successfully!");
     }
 
     @Override
