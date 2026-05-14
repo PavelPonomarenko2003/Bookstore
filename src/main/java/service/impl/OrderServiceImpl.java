@@ -4,6 +4,7 @@ import entity.*;
 import exception.*;
 import repository.interfaces.BookRepository;
 import repository.interfaces.OrderRepository;
+import repository.interfaces.UserRepository;
 import service.interfaces.OrderService;
 import service.interfaces.StockService;
 import serialization.config.ApplicationConfig;
@@ -16,15 +17,18 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final BookRepository bookRepository;
+    private final UserRepository userRepository;
     private final StockService stockService;
     private final ApplicationConfig config;
 
     public OrderServiceImpl(OrderRepository orderRepository,
                             BookRepository bookRepository,
+                            UserRepository userRepository,
                             StockService stockService,
                             ApplicationConfig config) {
         this.orderRepository = orderRepository;
         this.bookRepository = bookRepository;
+        this.userRepository = userRepository;
         this.stockService = stockService;
         this.config = config;
     }
@@ -36,6 +40,9 @@ public class OrderServiceImpl implements OrderService {
             return;
         }
 
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId)); 
+
         BookEntity book = bookRepository.findByTitle(bookTitle)
                 .orElseThrow(BookNotFoundException::new);
 
@@ -44,24 +51,18 @@ public class OrderServiceImpl implements OrderService {
         }
 
         OrderEntity order = new OrderEntity();
-
-        UserEntity userProxy = new UserEntity();
-        userProxy.setId(userId);
-
-        order.setUser(userProxy);
+        order.setUser(user);
         order.setCreatedTimestamp(LocalDateTime.now());
         order.setOrderStatus(OrderStatus.OPENED);
 
         OrderItemEntity item = new OrderItemEntity(book, quantity, book.getPrice());
-        
         order.addOrderItem(item);
 
         BigDecimal total = book.getPrice().multiply(BigDecimal.valueOf(quantity));
         order.setTotalPrice(total);
 
         orderRepository.save(order);
-
-        // Списываем книги со склада
+        
         Integer currentStock = stockService.getBookQuantity(book.getId());
         stockService.updateQuantity(book.getId(), currentStock - quantity);
 
