@@ -4,7 +4,6 @@ import entity.*;
 import exception.*;
 import repository.interfaces.BookRepository;
 import repository.interfaces.OrderRepository;
-import service.interfaces.BookService;
 import service.interfaces.OrderService;
 import service.interfaces.StockService;
 import serialization.config.ApplicationConfig;
@@ -17,18 +16,15 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final BookRepository bookRepository;
-    private final BookService bookService;
     private final StockService stockService;
     private final ApplicationConfig config;
 
     public OrderServiceImpl(OrderRepository orderRepository,
                             BookRepository bookRepository,
-                            BookService bookService,
                             StockService stockService,
                             ApplicationConfig config) {
         this.orderRepository = orderRepository;
         this.bookRepository = bookRepository;
-        this.bookService = bookService;
         this.stockService = stockService;
         this.config = config;
     }
@@ -56,19 +52,16 @@ public class OrderServiceImpl implements OrderService {
         order.setCreatedTimestamp(LocalDateTime.now());
         order.setOrderStatus(OrderStatus.OPENED);
 
-        OrderItemEntity item = new OrderItemEntity();
-        item.setBook(book);
-        item.setNumberOfBooks(quantity);
-        item.setPriceAtTheTimeOfPurchase(book.getPrice());
-
-        item.setOrder(order);
-        order.getListBooksInOrder().add(item);
+        OrderItemEntity item = new OrderItemEntity(book, quantity, book.getPrice());
+        
+        order.addOrderItem(item);
 
         BigDecimal total = book.getPrice().multiply(BigDecimal.valueOf(quantity));
         order.setTotalPrice(total);
 
         orderRepository.save(order);
 
+        // Списываем книги со склада
         Integer currentStock = stockService.getBookQuantity(book.getId());
         stockService.updateQuantity(book.getId(), currentStock - quantity);
 
@@ -86,7 +79,8 @@ public class OrderServiceImpl implements OrderService {
 
         for (OrderItemEntity item : order.getListBooksInOrder()) {
             Long bookId = item.getBook().getId();
-            stockService.updateQuantity(bookId, -item.getNumberOfBooks());
+            Integer currentStock = stockService.getBookQuantity(bookId);
+            stockService.updateQuantity(bookId, currentStock + item.getNumberOfBooks());
         }
 
         order.setOrderStatus(OrderStatus.CANCELLED);
@@ -108,6 +102,7 @@ public class OrderServiceImpl implements OrderService {
 
         order.setOrderStatus(OrderStatus.FINISHED);
         order.setFinishedTimestamp(LocalDateTime.now());
+        
         orderRepository.save(order);
 
         System.out.println("Success: Order " + orderId + " is FINISHED.");
