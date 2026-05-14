@@ -12,26 +12,20 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "order_items")
-@IdClass(OrderItemEntity.OrderItemId.class)
-public class OrderItemEntity implements Serializable {
+public class OrderItemEntity extends BaseEntity {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id", nullable = false)
     private OrderEntity order;
 
-    @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "book_id")
+    @JoinColumn(name = "book_id", nullable = false)
     private BookEntity book;
 
-    @Column(name = "quantity")
+    @Column(name = "quantity", nullable = false)
     private Integer numberOfBooks;
 
-    @Column(name = "price_at_purchase")
+    @Column(name = "price_at_purchase", nullable = false)
     private BigDecimal priceAtTheTimeOfPurchase;
 
     public OrderItemEntity() {
