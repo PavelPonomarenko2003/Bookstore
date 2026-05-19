@@ -22,12 +22,26 @@ services:
     image: neo4j:5.12
     container_name: bookstore_neo4j_container
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "7475:7474"
+      - "7688:7687"
     environment:
       NEO4J_AUTH: neo4j/root12345
     volumes:
       - neo4j_data:/data
+# App
+  bookstore-app:
+    build: .
+    container_name: bookstore_app_container
+    ports:
+      - "8080:8080" # external port : port for container
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://bookstore-mysql:3306/bookstore_db
+      - NEO4J_URI=bolt://bookstore-neo4j:7687
+    depends_on:
+      bookstore-mysql:
+        condition: service_healthy
+      bookstore-neo4j:
+        condition: service_started
 
 volumes:
   mysql_data:
