@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  # MySQL
+  bookstore-mysql:
+    image: mysql:8.0
+    container_name: bookstore_mysql_container
+    environment:
+      MYSQL_DATABASE: bookstore_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 5
+
+  # Neo4j
+  bookstore-neo4j:
+    image: neo4j:5.12
+    container_name: bookstore_neo4j_container
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/root12345
+    volumes:
+      - neo4j_data:/data
+
+volumes:
+  mysql_data:
+  neo4j_data:

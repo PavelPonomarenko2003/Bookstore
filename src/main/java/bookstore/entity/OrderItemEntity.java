@@ -2,7 +2,6 @@ package bookstore.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import org.hibernate.annotations.BatchSize;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
