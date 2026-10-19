@@ -12,7 +12,9 @@ public class DataSourceHikariConfiguration {
 
     static {
         HikariConfig config = new HikariConfig();
-
+        
+        config.setMaximumPoolSize(10);
+        config.setMinimumIdle(10);
         config.setJdbcUrl("jdbc:mysql://localhost:3306/bookstore_db");
         config.setDriverClassName("com.mysql.cj.jdbc.Driver");
         config.setUsername("root");
@@ -27,4 +29,11 @@ public class DataSourceHikariConfiguration {
     public static Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
+
+        public static void close() {
+        if (dataSource != null) {
+            dataSource.close();
+        }
+    }
+    
 }
